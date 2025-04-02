@@ -1,76 +1,97 @@
-# py Substrate Identity Searcher
+# Identity Searcher for Substrate
 
-Identity searcher for Substrate-based chains with [identity pallet](https://substrate.dev/rustdocs/v2.0.0/pallet_identity/index.html) installed.
+A Python-based identity searcher for Substrate-based blockchain networks utilizing the [Identity Pallet](https://substrate.dev/rustdocs/v2.0.0/pallet_identity/index.html).
 
-### Context
+## Overview
 
-The identities pallet allows an account owner to register real-world information alongside their account on-chain. This is helpful for validator identification, Council member metadata, and more.
-
-Please read more about substrate based identities at the [official wiki]()https://wiki.polkadot.network/docs/en/learn-identity
+The Identity Pallet allows account owners to associate real-world information with their on-chain accounts. This is particularly useful for validator identification, Council member metadata, and other use cases. Learn more about Substrate-based identities in the [official Polkadot wiki](https://wiki.polkadot.network/docs/en/learn-identity).
 
 ## Installation
-```
+
+Clone the repository and navigate to the project directory:
+
+```bash
 git clone https://github.com/al3mart/substrate_identity_searcher.git
 cd substrate_identity_searcher
 ```
-Use of virtualenv is recomended
 
-```
+It is recommended to use a virtual environment:
+
+```bash
 pip install virtualenv
 virtualenv .
 source bin/activate
 pip install substrate-interface
 ```
 
-And finally run it with a simple `python ./searcher.py [options] arg` 
+Run the script with:
 
-### Functionality
+```bash
+python ./searcher.py [options] <target>
+```
 
-This searcher is developed in a fairly simple script, that will set a connection with a network node of your election, this node endpoint is provided by the `--endpoint` option, also, user is able to choose a file for caching results by setting the `--cache` option.
+## Usage
 
-**Default Values**:
+This script connects to a Substrate-based blockchain node and searches for identities matching the specified `target`. The node endpoint can be specified using the `--endpoint` option, and a cache file can be set using the `--cache` option.
 
-- endpoint: `http://127.0.0.1:9933`
-- cache: `./.identities_cache.json`
+### Default Values
 
-So, if user is confortable using the default values there is no need of providing these options.
+- **Endpoint**: `http://127.0.0.1:9933`
+- **Cache File**: `./.identities_cache.json`
 
-Take into account that public nodes are not exposing HTTP endpoints, so using WSS is recomended.
+If the default values are sufficient, these options can be omitted. Note that public nodes typically do not expose HTTP endpoints, so using WebSocket (WSS) endpoints is recommended.
 
-In the other hand, is mandatory for the user to provide `arg`, from now on `target`, being this one the string to be looked for in the identities' metadata.
+### Required Argument
 
-At any moment user can run ./python searcher.py <-h, --help> for displaying all the command information.
+The script requires a `target` argument, which specifies the string to search for in the identity metadata. For help, run:
 
-Running this script will end up retrieving all identities that contain the given `target` at some part of their information fields.
+```bash
+python ./searcher.py --help
+```
 
-Notice that `target` can not only contain a simple string, but also an identity information field filter, being the existing fields at the moment of writing the following ones:
-- additional
-- display
-- legal
-- web
-- riot
-- email
-- pgpFingerprint
-- image
-- twitter
+### Filters
 
-Filters can be express within target like this `filter:str_to_be_found`. Only accepting one field filter from the list above for the moment.
+The `target` can include an optional filter to narrow the search to a specific identity field. Filters are specified in the format `filter:target_string`. Supported filters include:
 
-It is worth mentioning that when running this script, identities in the result list will not only be the ones with information that completely matches our `target`, but also identities which have information that is not exactly equals to `target`, but contains `target` at some point.
+- `additional`
+- `display`
+- `legal`
+- `web`
+- `riot`
+- `email`
+- `pgpFingerprint`
+- `image`
+- `twitter`
 
-Given the magnitude of the problem, and being metadata whatever information owners of those identities wanted to input, it is difficult to find an efficient solution at first sight, and for that, a little cache system is included, so the heavy work is only done once.
+For example, `display:Alice` searches for identities where the `display` field contains "Alice".
+
+### Matching Behavior
+
+- The script returns identities where the `target` is found in any metadata field.
+- If a filter is provided, the search is restricted to the specified field.
+- Partial matches are included. For example, searching for "bob" will match "bobamazoo".
+
+### Caching
+
+To improve performance, the script uses a persistent cache system. The cache stores results from previous searches, reducing the need for repeated full searches. The cache is automatically updated if the on-chain identity data changes.
 
 ## Features
-- inputting `target` return all identities with `target` anywhere in any of their fields.
-- inputting `filter:target` filter by `filter` field only, and return all identities with `target` anywhere in their `filter` field.
-- partial matches are included, e.g. target "bob" will match with identities containing "bobamazoo".
-- Persistent cache system to speed up repetitive requests.
+
+- Search for identities containing a specific `target` in any metadata field.
+- Use filters to restrict searches to specific fields.
+- Supports partial matches (e.g., "bob" matches "bobamazoo").
+- Persistent caching for faster repeated searches.
 
 ## Dependencies
+
 - [substrate-interface](https://github.com/polkascan/py-substrate-interface)
 
-## Possible upgrades & ongoing work
+## Example
 
-- ~~While developing this script I have been able to get a flawless connection with the node I have been using, a local polkadot node by running the latest polkadot binary with `--dev` flag, but it has not been the same when connecting to live networks, as I have been receiving [Err(UnsafeRpcError)](https://substrate.dev/rustdocs/v2.0.0/sc_rpc_api/enum.DenyUnsafe.html), and for the time being I still don't know the cause of that denial.~~
+To search for identities containing "Alice" in the `display` field:
 
-- Identities request could be done in a separate thread
+```bash
+python ./searcher.py --endpoint ws://127.0.0.1:9944 display:Alice
+```
+
+This will return all identities where the `display` field contains "Alice".
